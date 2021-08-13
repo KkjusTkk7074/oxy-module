@@ -56,7 +56,8 @@ class OxyTrack {
              * URL to this track
              * @type {?string}
              */
-            uri: raw.info.uri
+            uri: raw.info.uri,
+           
         };
     }
 }

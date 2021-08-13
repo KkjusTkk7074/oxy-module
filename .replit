@@ -1,1 +1,1 @@
-run="bash node test.js"
+run="bash node oxy.js"

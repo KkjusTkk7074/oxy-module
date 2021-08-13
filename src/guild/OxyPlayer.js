@@ -33,6 +33,7 @@ class OxyPlayer extends EventEmitter {
          this.autoplay = false ;
         this.track = null;
         this.current = null;
+        this.previous = null;
         /**
          * 
          * 
@@ -162,6 +163,7 @@ class OxyPlayer extends EventEmitter {
      */
     playTrack(input, options = {}) {
         if (!input) throw new Error('No track given to play');
+       this.current = input;
         if (input instanceof ShoukakuTrack) input = input.track;
         options = mergeDefault({ noReplace: true, pause: false }, options);
         const payload = {
@@ -175,7 +177,7 @@ class OxyPlayer extends EventEmitter {
         if (options.endTime) payload.endTime = options.endTime;
         this.connection.node.send(payload);
         this.track = input;
-      // this.current = input;
+      
         this.paused = options.pause;
         this.position = 0;
         return this;
@@ -365,14 +367,22 @@ class OxyPlayer extends EventEmitter {
         this.updateFilters();
         return this;
     }
-    skip(){
-    this.stopTrack()
     
-    if(this.Queue){
-    this.playTrack(this.Queue.shift())
+    async skip(){
+      const sound = await  this.Queue.first()
+     //this.current = sound;
+        this.previous = this.current;
+    this.current = null;
+    this.stopTrack()
+   if(sound){ 
+    this.playTrack(sound)
+    this.playing = true;
+   }else {
+     this.playing = false
+   }
     }
       
-    }
+    
     /**
      * Higher frequencies get suppressed, while lower frequencies pass through this filter, thus the name low pass
      * @param {Object|null} values
@@ -436,11 +446,15 @@ class OxyPlayer extends EventEmitter {
   * 
   */
  async play(){
+const sound = await  this.Queue.shift()
+//this.current = sound;
+
    
-   const sound = await  this.Queue.shift()
-   this.current = sound;
    if(sound) {
-this.playTrack(sound)
+
+   this.playTrack(sound)
+   
+  
 this.playing = true;
    } else {
      
@@ -530,8 +544,7 @@ this.play()
    }
  
   async turulub () {
-    this.previous = this.current;
-    this.current = null;
+   
     
   }
 
@@ -574,13 +587,17 @@ this.play()
         switch (json.type) {
             case 'TrackStartEvent':
                 this.emit('start', json);
-          
+              
                 break;
             case 'TrackEndEvent':
             case 'TrackStuckEvent':
                 this.emit('end', json);
+                 this.previous = this.current;
+    this.current = null;
+             //   this.Queue.shift()
                 this.turulub()
                 this.Autoplay()
+                
                this.play() 
             //    console.log(this.Queue)
              //    this.play(this.Queue.shift())
